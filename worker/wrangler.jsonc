@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "vpn-container",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": ["0 15 L * *"]
+  }
+}

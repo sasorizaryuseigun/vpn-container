@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+
+name: Dockerイメージのビルドとプッシュ
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/vpn:latest
+jobs:
+  build:
+    name: Dockerイメージをビルド
+    runs-on: ubuntu-latest
+    steps:
+      - name: ソースコードを取得
+        uses: actions/checkout@v6
+      - name: Docker Buildをセットアップ
+        uses: docker/setup-buildx-action@v4
+      - name: Dockerイメージをビルド
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: ${{ env.IMAGE_NAME }}
+          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+      - name: DockerイメージをArtifactに保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: ${{ runner.temp }}/image.tar
+          retention-days: 1
+          compression-level: 0
+  test:
+    name: Dockerイメージをテスト
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Dockerイメージを取得
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: ${{ runner.temp }}
+      - name: Compose定義リポジトリを取得
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ vars.COMPOSE_REPO }}
+      - name: Dockerイメージをロード
+        run: docker load --input "${{ runner.temp }}/image.tar"
+      - name: Docker Composeでヘルスチェック
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          cleanup() {
+            docker compose down --volumes --remove-orphans 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          docker compose up -d --pull never --wait
+  push:
+    name: Dockerイメージをプッシュ
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Dockerイメージを取得
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: ${{ runner.temp }}
+      - name: Dockerイメージをロード
+        run: docker load --input "${{ runner.temp }}/image.tar"
+      - name: GitHub Container Registryにログイン
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Dockerイメージをプッシュ
+        run: docker push "${IMAGE_NAME}"

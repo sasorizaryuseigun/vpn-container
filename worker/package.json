@@ -1,0 +1,30 @@
+{
+  "name": "vpn-container",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^8.2.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260707.1",
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.107.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.10.0",
+      "onFail": "download"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0-only"
+}
